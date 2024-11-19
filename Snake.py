@@ -20,8 +20,11 @@ RED = (255, 0, 0)
 
 # Initialize the screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Snake Game with AI Pathfinding')
+pygame.display.set_caption('Snake Game with AI Pathfinding & Score Display')
 clock = pygame.time.Clock()
+
+# Font for displaying score
+font = pygame.font.SysFont(None, 30)
 
 # Snake direction constants
 UP = (0, -1)
@@ -35,6 +38,7 @@ class Snake:
         self.body = [(GRID_WIDTH // 2, GRID_HEIGHT // 2)]
         self.direction = random.choice([UP, DOWN, LEFT, RIGHT])
         self.grow = False
+        self.score = 0
 
     def move(self):
         head_x, head_y = self.body[0]
@@ -56,6 +60,7 @@ class Snake:
 
     def grow_snake(self):
         self.grow = True
+        self.score += 1  # Increase score when the snake eats the food
 
     def check_collision(self):
         head_x, head_y = self.body[0]
@@ -107,11 +112,15 @@ def draw_grid():
     for y in range(0, HEIGHT, CELL_SIZE):
         pygame.draw.line(screen, WHITE, (0, y), (WIDTH, y))
 
-# Function to draw the snake and food
+# Function to draw the snake, food, and score
 def draw_objects(snake, food):
     for segment in snake.body:
         pygame.draw.rect(screen, GREEN, (segment[0] * CELL_SIZE, segment[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     pygame.draw.rect(screen, RED, (food.position[0] * CELL_SIZE, food.position[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+    # Draw score
+    score_text = font.render(f"Score: {snake.score}", True, WHITE)
+    screen.blit(score_text, (10, 10))
 
 # Main game loop
 def main():
@@ -138,6 +147,10 @@ def main():
                 elif event.key == pygame.K_RIGHT:
                     snake.change_direction(RIGHT)
                     ai_enabled = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left click
+                    x, y = event.pos
+                    food.position = (x // CELL_SIZE, y // CELL_SIZE)
 
         if ai_enabled and not game_over:
             # Get AI's path to food
