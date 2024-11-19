@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+from collections import deque
 
 # Initialize Pygame
 pygame.init()
@@ -19,7 +20,7 @@ RED = (255, 0, 0)
 
 # Initialize the screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Snake Game')
+pygame.display.set_caption('Snake Game with AI Pathfinding')
 clock = pygame.time.Clock()
 
 # Snake direction constants
@@ -73,6 +74,32 @@ class Food:
     def randomize_position(self):
         self.position = (random.randint(0, GRID_WIDTH - 1), random.randint(0, GRID_HEIGHT - 1))
 
+# BFS for AI pathfinding
+def bfs(snake, food_pos):
+    start = snake.body[0]
+    queue = deque([(start, [])])
+    visited = set()
+    visited.add(start)
+
+    while queue:
+        (current, path) = queue.popleft()
+
+        # If we reached the food, return the path
+        if current == food_pos:
+            return path
+
+        # Explore neighbors
+        for direction in [UP, DOWN, LEFT, RIGHT]:
+            neighbor = (current[0] + direction[0], current[1] + direction[1])
+
+            if (0 <= neighbor[0] < GRID_WIDTH and 0 <= neighbor[1] < GRID_HEIGHT and
+                    neighbor not in snake.body and neighbor not in visited):
+                queue.append((neighbor, path + [direction]))
+                visited.add(neighbor)
+
+    # No path found
+    return None
+
 # Function to draw the grid
 def draw_grid():
     for x in range(0, WIDTH, CELL_SIZE):
@@ -90,6 +117,7 @@ def draw_objects(snake, food):
 def main():
     snake = Snake()
     food = Food()
+    ai_enabled = True  # Toggle AI control
     game_over = False
 
     while True:
@@ -100,28 +128,42 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     snake.change_direction(UP)
+                    ai_enabled = False
                 elif event.key == pygame.K_DOWN:
                     snake.change_direction(DOWN)
+                    ai_enabled = False
                 elif event.key == pygame.K_LEFT:
                     snake.change_direction(LEFT)
+                    ai_enabled = False
                 elif event.key == pygame.K_RIGHT:
                     snake.change_direction(RIGHT)
+                    ai_enabled = False
 
-        if not game_over:
-            snake.move()
+        if ai_enabled and not game_over:
+            # Get AI's path to food
+            path = bfs(snake, food.position)
+            if path:
+                snake.change_direction(path[0])
 
+        # Move the snake
+        snake.move()
+
+        # Check for collisions
         if snake.check_collision():
             game_over = True
 
+        # Check if snake eats the food
         if snake.body[0] == food.position:
             snake.grow_snake()
             food.randomize_position()
 
+        # Drawing
         screen.fill(BLACK)
         draw_grid()
         draw_objects(snake, food)
         pygame.display.flip()
 
+        # Control the game's speed
         clock.tick(10)
 
 if __name__ == "__main__":
