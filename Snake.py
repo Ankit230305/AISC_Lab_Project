@@ -152,29 +152,44 @@ def main():
                     x, y = event.pos
                     food.position = (x // CELL_SIZE, y // CELL_SIZE)
 
-        if ai_enabled and not game_over:
-            # Get AI's path to food
-            path = bfs(snake, food.position)
-            if path:
-                snake.change_direction(path[0])
+        if not game_over:
+            if ai_enabled:
+                # Get AI's path to food
+                path = bfs(snake, food.position)
+                if path:
+                    snake.change_direction(path[0])
 
-        # Move the snake
-        snake.move()
+            # Move the snake
+            snake.move()
 
-        # Check for collisions
-        if snake.check_collision():
-            game_over = True
+            # Check for collisions
+            if snake.check_collision():
+                game_over = True
 
-        # Check if snake eats the food
-        if snake.body[0] == food.position:
-            snake.grow_snake()
-            food.randomize_position()
+            # Check if snake eats the food
+            if snake.body[0] == food.position:
+                snake.grow_snake()
+                food.randomize_position()
 
         # Drawing
         screen.fill(BLACK)
         draw_grid()
         draw_objects(snake, food)
+
+        # Show "Game Over" message if game is over
+        if game_over:
+            game_over_text = font.render("Game Over! Press ESC to exit", True, WHITE)
+            screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
+            pygame.display.flip()
+
         pygame.display.flip()
+
+        # Handle exiting the game after "Game Over"
+        if game_over:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
 
         # Control the game's speed
         clock.tick(10)
